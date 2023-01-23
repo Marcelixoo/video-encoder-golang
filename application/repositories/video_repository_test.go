@@ -4,7 +4,6 @@ import (
 	"encoder/application/repositories"
 	"encoder/domain"
 	"encoder/framework/database"
-	"log"
 	"testing"
 	"time"
 
@@ -14,13 +13,7 @@ import (
 
 func TestVideoRepositoryDbInsert(t *testing.T) {
 	db := database.NewDbTest()
-
-	// cleanup database connection
-	sqlDB, err := db.DB()
-	if err != nil {
-		log.Fatalln(err)
-	}
-	defer sqlDB.Close()
+	defer db.Close()
 
 	video := domain.NewVideo()
 	video.ID = uuid.NewV4().String()
