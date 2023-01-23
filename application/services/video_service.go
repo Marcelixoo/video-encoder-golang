@@ -13,15 +13,18 @@ import (
 )
 
 type VideoService struct {
-	Video           *domain.Video
 	VideoRepository repositories.VideoRepository
+	Bucket          string
 }
 
-func NewVideoService() VideoService {
-	return VideoService{}
+func NewVideoService(bucket string, repository repositories.VideoRepository) VideoService {
+	return VideoService{
+		VideoRepository: repository,
+		Bucket:          bucket,
+	}
 }
 
-func (v *VideoService) Download(bucketName string) error {
+func (v *VideoService) Download(video *domain.Video) error {
 	ctx := context.Background()
 
 	client, err := storage.NewClient(ctx)
@@ -30,8 +33,8 @@ func (v *VideoService) Download(bucketName string) error {
 		return err
 	}
 
-	bucket := client.Bucket(bucketName)
-	object := bucket.Object(v.Video.FilePath)
+	bucket := client.Bucket(v.Bucket)
+	object := bucket.Object(video.FilePath)
 
 	r, err := object.NewReader(ctx)
 	if err != nil {
@@ -45,7 +48,7 @@ func (v *VideoService) Download(bucketName string) error {
 		return err
 	}
 
-	filename := os.Getenv("LOCAL_STORAGE_PATH") + "/" + v.Video.ID + ".mp4"
+	filename := os.Getenv("LOCAL_STORAGE_PATH") + "/" + video.ID + ".mp4"
 	f, err := os.Create(filename)
 	if err != nil {
 		return err
@@ -58,14 +61,14 @@ func (v *VideoService) Download(bucketName string) error {
 
 	defer f.Close()
 
-	log.Printf("Video %v stored", v.Video.ID)
+	log.Printf("Video %v stored", video.ID)
 
 	return nil
 }
 
-func (v *VideoService) Fragment() error {
+func (v *VideoService) Fragment(video *domain.Video) error {
 	localStoragePath := os.Getenv("LOCAL_STORAGE_PATH")
-	fragmentsDir := localStoragePath + "/" + v.Video.ID
+	fragmentsDir := localStoragePath + "/" + video.ID
 
 	err := os.Mkdir(fragmentsDir, os.ModePerm)
 	if err != nil {
@@ -73,8 +76,8 @@ func (v *VideoService) Fragment() error {
 	}
 
 	// necessary fragmentation step to prepare for slicing
-	source := localStoragePath + "/" + v.Video.ID + ".mp4"
-	target := localStoragePath + "/" + v.Video.ID + ".frag"
+	source := localStoragePath + "/" + video.ID + ".mp4"
+	target := localStoragePath + "/" + video.ID + ".frag"
 
 	cmd := exec.Command("mp4fragment", source, target)
 

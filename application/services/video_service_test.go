@@ -20,16 +20,16 @@ func TestVideoServiceDownload(t *testing.T) {
 	video := newVideo()
 	videoRepository := newVideoRepository(db)
 
-	videoService := services.NewVideoService()
+	videoService := services.NewVideoService(
+		"video-encoder-golang-test",
+		videoRepository,
+	)
 
-	videoService.Video = video
-	videoService.VideoRepository = videoRepository
-
-	err := videoService.Download("video-encoder-golang-test")
+	err := videoService.Download(video)
 
 	require.Nil(t, err)
 
-	err = videoService.Fragment()
+	err = videoService.Fragment(video)
 	require.Nil(t, err)
 }
 
