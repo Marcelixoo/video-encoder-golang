@@ -6,3 +6,5 @@ services:
     build: .
     volumes:
       - .:/go/src
+    env_file:
+      - .env
