@@ -5,6 +5,7 @@ import (
 	"encoder/application/services"
 	"encoder/domain"
 	"encoder/framework/database"
+	"fmt"
 	"log"
 	"testing"
 	"time"
@@ -31,6 +32,9 @@ func TestVideoServiceDownload(t *testing.T) {
 
 	err = videoService.Fragment(video)
 	require.Nil(t, err)
+
+	err = videoService.Encode(video)
+	require.Nil(t, err)
 }
 
 func init() {
@@ -54,6 +58,8 @@ func newVideo() *domain.Video {
 	video.ID = uuid.NewV4().String()
 	video.FilePath = "convite.mp4"
 	video.CreatedAt = time.Now()
+
+	fmt.Printf("testing with video %v", video)
 
 	return video
 }

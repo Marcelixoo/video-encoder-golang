@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoder/application/repositories"
 	"encoder/domain"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -79,6 +80,35 @@ func (v *VideoService) Fragment(video *domain.Video) error {
 	target := absPathToLocalStorage(video.ID + ".frag")
 
 	cmd := exec.Command("mp4fragment", source, target)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return err
+	}
+
+	printOutput(output)
+
+	return nil
+}
+
+// Encode packages a local .mp4 video file
+// into a series of fragments using the
+// command line tool `bento4`.
+func (v *VideoService) Encode(video *domain.Video) error {
+	intermediaryFilename := fmt.Sprintf("%s.frag", video.ID)
+	destinationFolder := fmt.Sprint(video.ID)
+
+	cmdArgs := []string{}
+
+	cmdArgs = append(cmdArgs, absPathToLocalStorage(intermediaryFilename))
+	cmdArgs = append(cmdArgs, "--use-segment-timeline")
+	cmdArgs = append(cmdArgs, "-o")
+	cmdArgs = append(cmdArgs, absPathToLocalStorage(destinationFolder))
+	cmdArgs = append(cmdArgs, "-f")
+	cmdArgs = append(cmdArgs, "--exec-dir")
+	cmdArgs = append(cmdArgs, "/opt/bento4/bin/")
+
+	cmd := exec.Command("mp4dash", cmdArgs...)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
