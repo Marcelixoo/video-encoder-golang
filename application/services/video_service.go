@@ -5,6 +5,7 @@ import (
 	"encoder/application/repositories"
 	"encoder/domain"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -25,23 +26,16 @@ func NewVideoService(bucket string, repository repositories.VideoRepository) Vid
 	}
 }
 
+// Download reads the content from a remote
+// file named video.ID + ".mp4" into a local
+// file named after the remote one.
 func (v *VideoService) Download(video *domain.Video) error {
-	ctx := context.Background()
+	localFilePath := absPathToLocalStorage(video.ID + ".mp4")
 
-	client, err := storage.NewClient(ctx)
-
+	r, err := remoteFileReaderFor(v.Bucket, video.FilePath)
 	if err != nil {
 		return err
 	}
-
-	bucket := client.Bucket(v.Bucket)
-	object := bucket.Object(video.FilePath)
-
-	r, err := object.NewReader(ctx)
-	if err != nil {
-		return err
-	}
-
 	defer r.Close()
 
 	body, err := ioutil.ReadAll(r)
@@ -49,22 +43,45 @@ func (v *VideoService) Download(video *domain.Video) error {
 		return err
 	}
 
-	filename := absPathToLocalStorage(video.ID + ".mp4")
-	f, err := os.Create(filename)
+	f, err := os.Create(localFilePath)
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 
 	_, err = f.Write(body)
 	if err != nil {
 		return err
 	}
 
-	defer f.Close()
-
-	log.Printf("Video %v stored", video.ID)
+	log.Printf("video file %s.mp4 successfully downloaded", video.ID)
 
 	return nil
+}
+
+type StorageReader interface {
+	io.Reader
+
+	Close() error
+}
+
+func remoteFileReaderFor(bucketName, fileName string) (StorageReader, error) {
+	ctx := context.Background()
+
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	bucket := client.Bucket(bucketName)
+	object := bucket.Object(fileName)
+
+	r, err := object.NewReader(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return r, nil
 }
 
 func (v *VideoService) Fragment(video *domain.Video) error {
