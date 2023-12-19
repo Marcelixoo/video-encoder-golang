@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log"
 	"testing"
-	"time"
 
 	"github.com/jinzhu/gorm"
 	"github.com/joho/godotenv"
@@ -17,7 +16,13 @@ import (
 )
 
 func TestVideoServiceDownload(t *testing.T) {
-	db := prepare()
+	var err error
+
+	db, err := prepare()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	video := newVideo()
 	videoRepository := newVideoRepository(db)
 
@@ -26,8 +31,7 @@ func TestVideoServiceDownload(t *testing.T) {
 		videoRepository,
 	)
 
-	err := videoService.Download(video)
-
+	err = videoService.Download(video)
 	require.Nil(t, err)
 
 	err = videoService.Fragment(video)
@@ -47,20 +51,18 @@ func init() {
 	}
 }
 
-func prepare() *gorm.DB {
-	db := database.NewDbTest()
-
+func prepare() (*gorm.DB, error) {
+	db, err := database.NewDbTest().Connect()
+	if err != nil {
+		return nil, fmt.Errorf("could not establish connection to db %v", err)
+	}
 	defer db.Close()
 
-	return db
+	return db, nil
 }
 
 func newVideo() *domain.Video {
-	video := domain.NewVideo()
-
-	video.ID = uuid.NewV4().String()
-	video.FilePath = "convite.mp4"
-	video.CreatedAt = time.Now()
+	video := domain.NewVideo(uuid.NewV4().String(), "resource-id", "convite.mp4")
 
 	fmt.Printf("testing with video %v", video)
 

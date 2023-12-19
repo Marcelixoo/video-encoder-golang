@@ -5,7 +5,6 @@ import (
 	"encoder/domain"
 	"encoder/framework/database"
 	"testing"
-	"time"
 
 	"github.com/jinzhu/gorm"
 	uuid "github.com/satori/go.uuid"
@@ -13,7 +12,10 @@ import (
 )
 
 func TestRepositoryDbInsert(t *testing.T) {
-	db := database.NewDbTest()
+	db, err := database.NewDbTest().Connect()
+	if err != nil {
+		t.Fatalf("could not establish connection to db %v", err)
+	}
 	defer db.Close()
 
 	job, video, err := newJob(db, "output_path", "Pending")
@@ -30,7 +32,10 @@ func TestRepositoryDbInsert(t *testing.T) {
 }
 
 func TestRepositoryDbUpdate(t *testing.T) {
-	db := database.NewDbTest()
+	db, err := database.NewDbTest().Connect()
+	if err != nil {
+		t.Fatalf("could not establish connection to db %v", err)
+	}
 	defer db.Close()
 
 	job, _, err := newJob(db, "output_path", "Pending")
@@ -48,13 +53,7 @@ func TestRepositoryDbUpdate(t *testing.T) {
 }
 
 func newVideo() *domain.Video {
-	video := domain.NewVideo()
-
-	video.ID = uuid.NewV4().String()
-	video.FilePath = "path"
-	video.CreatedAt = time.Now()
-
-	return video
+	return domain.NewVideo(uuid.NewV4().String(), "test-video", "path")
 }
 
 func newJob(db *gorm.DB, output string, status string) (*domain.Job, *domain.Video, error) {

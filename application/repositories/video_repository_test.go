@@ -5,22 +5,20 @@ import (
 	"encoder/domain"
 	"encoder/framework/database"
 	"testing"
-	"time"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/require"
 )
 
 func TestVideoRepositoryDbInsert(t *testing.T) {
-	db := database.NewDbTest()
+	db, err := database.NewDbTest().Connect()
+	if err != nil {
+		t.Fatalf("could not establish connection to db %v", err)
+	}
 	defer db.Close()
 
-	video := domain.NewVideo()
-	video.ID = uuid.NewV4().String()
-	video.FilePath = "path"
-	video.CreatedAt = time.Now()
-
 	repo := repositories.VideoRepositoryDb{Db: db}
+	video := domain.NewVideo(uuid.NewV4().String(), "resource-id", "path")
 	repo.Insert(video)
 
 	v, err := repo.Find(video.ID)

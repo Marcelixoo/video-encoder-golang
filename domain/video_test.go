@@ -3,33 +3,21 @@ package domain_test
 import (
 	"encoder/domain"
 	"testing"
-	"time"
 
+	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/require"
 )
 
-func TestValidateIfVideoIsEmpty(t *testing.T) {
-	video := domain.NewVideo() // convention to create objects from a pkg
-	err := video.Validate()
-
-	require.Error(t, err)
-}
-
 func TestVideoIDIsNotUuid(t *testing.T) {
-	video := domain.NewVideo() // convention to create objects from a pkg
+	invalidID := "abc"
 
-	video.ID = "abc" // not valid UUID
-	video.ResourceID = "any-example-id"
-	video.FilePath = "path-to-video-file"
-	video.CreatedAt = time.Now()
+	video := domain.NewVideo(invalidID, "any-example-id", "path-to-video-file")
 
-	err := video.Validate()
-
-	require.Error(t, err)
+	require.Error(t, video.Validate())
 }
 
 func TestVideoValidation(t *testing.T) {
-	video := domain.NewVideo("any-example-id", "path-to-video-file")
+	video := domain.NewVideo(uuid.NewV4().String(), "any-example-id", "path-to-video-file")
 
 	err := video.Validate()
 
