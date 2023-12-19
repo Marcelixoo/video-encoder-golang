@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -30,12 +29,7 @@ func TestVideoIDIsNotUuid(t *testing.T) {
 }
 
 func TestVideoValidation(t *testing.T) {
-	video := domain.NewVideo() // convention to create objects from a pkg
-
-	video.ID = uuid.NewV4().String()
-	video.ResourceID = "any-example-id"
-	video.FilePath = "path-to-video-file"
-	video.CreatedAt = time.Now()
+	video := domain.NewVideo("any-example-id", "path-to-video-file")
 
 	err := video.Validate()
 
