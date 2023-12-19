@@ -120,6 +120,41 @@ func (v *VideoService) Encode(video *domain.Video) error {
 	return nil
 }
 
+// Finish does a cleanup of files created
+// during intermediary steps of the final
+// encoding a .mp4 video.
+func (v *VideoService) Finish(video *domain.Video) error {
+	var (
+		err error
+
+		initialMP4Filename string = video.ID + ".mp4"
+		fragmentedFilename string = video.ID + ".frag"
+		outputFolder       string = video.ID
+	)
+
+	err = os.Remove(absPathToLocalStorage(initialMP4Filename))
+	if err != nil {
+		log.Printf("error removing initial .mp4 file %s \n", initialMP4Filename)
+		return err
+	}
+
+	err = os.Remove(absPathToLocalStorage(fragmentedFilename))
+	if err != nil {
+		log.Printf("error removing fragmented file %s \n", fragmentedFilename)
+		return err
+	}
+
+	err = os.RemoveAll(absPathToLocalStorage(outputFolder))
+	if err != nil {
+		log.Printf("error removing folder %s \n", outputFolder)
+		return err
+	}
+
+	log.Printf("all intermediary files generated for video %s have been removed \n", video.ID)
+
+	return nil
+}
+
 func printOutput(output []byte) {
 	if len(output) > 0 {
 		log.Printf("=====> Output: %s\n", string(output))

@@ -35,6 +35,9 @@ func TestVideoServiceDownload(t *testing.T) {
 
 	err = videoService.Encode(video)
 	require.Nil(t, err)
+
+	err = videoService.Finish(video)
+	require.Nil(t, err)
 }
 
 func init() {
