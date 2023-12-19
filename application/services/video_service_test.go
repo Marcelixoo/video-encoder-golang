@@ -5,6 +5,7 @@ import (
 	"encoder/application/services"
 	"encoder/domain"
 	"encoder/framework/database"
+	"encoder/framework/gcp"
 	"fmt"
 	"log"
 	"testing"
@@ -26,9 +27,14 @@ func TestVideoServiceDownload(t *testing.T) {
 	video := newVideo()
 	videoRepository := newVideoRepository(db)
 
+	videoStorage, err := gcp.NewCloudStorageReader("video-encoder-golang-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	videoService := services.NewVideoService(
-		"video-encoder-golang-test",
 		videoRepository,
+		videoStorage,
 	)
 
 	err = videoService.Download(video)

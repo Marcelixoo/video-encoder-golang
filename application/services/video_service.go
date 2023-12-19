@@ -1,7 +1,6 @@
 package services
 
 import (
-	"context"
 	"encoder/application/repositories"
 	"encoder/domain"
 	"fmt"
@@ -10,20 +9,28 @@ import (
 	"log"
 	"os"
 	"os/exec"
-
-	"cloud.google.com/go/storage"
 )
 
 type VideoService struct {
+	VideoStorage    VideoStorage
 	VideoRepository repositories.VideoRepository
 	Bucket          string
 }
 
-func NewVideoService(bucket string, repository repositories.VideoRepository) VideoService {
+func NewVideoService(repository repositories.VideoRepository, videoStorage VideoStorage) VideoService {
 	return VideoService{
 		VideoRepository: repository,
-		Bucket:          bucket,
+		VideoStorage:    videoStorage,
 	}
+}
+
+type VideoStorageReader interface {
+	io.Reader
+	Close() error
+}
+
+type VideoStorage interface {
+	ReadVideo(video *domain.Video) (VideoStorageReader, error)
 }
 
 // Download reads the content from a remote
@@ -32,7 +39,7 @@ func NewVideoService(bucket string, repository repositories.VideoRepository) Vid
 func (v *VideoService) Download(video *domain.Video) error {
 	localFilePath := absPathToLocalStorage(video.ID + ".mp4")
 
-	r, err := remoteFileReaderFor(v.Bucket, video.FilePath)
+	r, err := v.VideoStorage.ReadVideo(video)
 	if err != nil {
 		return err
 	}
@@ -57,31 +64,6 @@ func (v *VideoService) Download(video *domain.Video) error {
 	log.Printf("video file %s.mp4 successfully downloaded", video.ID)
 
 	return nil
-}
-
-type StorageReader interface {
-	io.Reader
-
-	Close() error
-}
-
-func remoteFileReaderFor(bucketName, fileName string) (StorageReader, error) {
-	ctx := context.Background()
-
-	client, err := storage.NewClient(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	bucket := client.Bucket(bucketName)
-	object := bucket.Object(fileName)
-
-	r, err := object.NewReader(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return r, nil
 }
 
 func (v *VideoService) Fragment(video *domain.Video) error {
