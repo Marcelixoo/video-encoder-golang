@@ -3,6 +3,7 @@ package services
 import (
 	"encoder/application/repositories"
 	"encoder/domain"
+	"encoder/framework/filesystem"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -33,9 +34,9 @@ type VideoStorage interface {
 	ReadVideo(video *domain.Video) (VideoStorageReader, error)
 }
 
-// Download reads the content from a remote
-// file named video.ID + ".mp4" into a local
-// file named after the remote one.
+// Download reads the content of a video file
+// named video.ID + ".mp4" from storage into
+// a local file with similar name.
 func (v *VideoService) Download(video *domain.Video) error {
 	localFilePath := absPathToLocalStorage(video.ID + ".mp4")
 
@@ -161,6 +162,5 @@ func printOutput(output []byte) {
 }
 
 func absPathToLocalStorage(partToConcat string) string {
-	localStoragePath := os.Getenv("LOCAL_STORAGE_PATH")
-	return localStoragePath + "/" + partToConcat
+	return filesystem.AbsPathToLocalStorage(partToConcat)
 }

@@ -19,19 +19,12 @@ import (
 func TestVideoServiceDownload(t *testing.T) {
 	var err error
 
-	db, err := prepare()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	video := newVideo()
-	videoRepository := newVideoRepository(db)
-
 	videoStorage, err := gcp.NewCloudStorageReader("video-encoder-golang-test")
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	video, videoRepository := prepare()
 	videoService := services.NewVideoService(
 		videoRepository,
 		videoStorage,
@@ -57,14 +50,17 @@ func init() {
 	}
 }
 
-func prepare() (*gorm.DB, error) {
+func prepare() (*domain.Video, *repositories.VideoRepositoryDb) {
 	db, err := database.NewDbTest().Connect()
 	if err != nil {
-		return nil, fmt.Errorf("could not establish connection to db %v", err)
+		panic(fmt.Errorf("could not establish connection to db %v", err))
 	}
 	defer db.Close()
 
-	return db, nil
+	video := newVideo()
+	repository := newVideoRepository(db)
+
+	return video, repository
 }
 
 func newVideo() *domain.Video {
