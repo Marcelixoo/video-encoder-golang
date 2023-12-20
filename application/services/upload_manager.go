@@ -37,14 +37,10 @@ func (vu *VideoUpload) UploadObject(
 	}
 	defer f.Close()
 
-	wc := client.Bucket(vu.OutputBucket).Object(filename).NewWriter(ctx)
-	wc.ACL = []storage.ACLRule{
-		{
-			Entity: storage.AllUsers,
-			Role:   storage.RoleReader,
-		},
-	}
+	object := client.Bucket(vu.OutputBucket).Object(filename)
+	object.If(storage.Conditions{DoesNotExist: true})
 
+	wc := object.NewWriter(ctx)
 	if _, err = io.Copy(wc, f); err != nil {
 		return err
 	}
@@ -56,9 +52,13 @@ func (vu *VideoUpload) UploadObject(
 	return nil
 }
 
-func (vu *VideoUpload) ProcessUpload(concurrency int, doneUpload chan string) error {
-	doneUpload <- "upload completed"
+const (
+	UPLOAD_STATUS_COMPLETED = "upload completed"
+	UPLOAD_STATUS_RUNNING   = "upload is running"
+	UPLOAD_STATUS_FAILED    = "upload failed"
+)
 
+func (vu *VideoUpload) ProcessUpload(concurrency int, doneUpload chan string) error {
 	// stream the index of files to be
 	// processed from the slice of paths.
 	in := make(chan int, runtime.NumCPU())
@@ -88,7 +88,7 @@ func (vu *VideoUpload) ProcessUpload(concurrency int, doneUpload chan string) er
 	for r := range returnChannel {
 		countDoneWorker++
 
-		if r != "" {
+		if r != UPLOAD_STATUS_RUNNING {
 			doneUpload <- r
 			break
 		}
@@ -124,13 +124,13 @@ func (vu *VideoUpload) uploadWorker(
 		if err != nil {
 			vu.Errors = append(vu.Errors, vu.Paths[x])
 			log.Printf("error during upload of %s: %v", vu.Paths[x], err)
-			returnChan <- err.Error()
+			returnChan <- UPLOAD_STATUS_FAILED
 		}
 
-		returnChan <- ""
+		returnChan <- UPLOAD_STATUS_RUNNING
 	}
 
-	returnChan <- "upload completed"
+	returnChan <- UPLOAD_STATUS_COMPLETED
 }
 
 func getClientUpload() (*storage.Client, context.Context, error) {
