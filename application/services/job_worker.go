@@ -3,10 +3,7 @@ package services
 import (
 	"encoder/domain"
 	"encoding/json"
-	"os"
-	"time"
 
-	uuid "github.com/satori/go.uuid"
 	"github.com/streadway/amqp"
 )
 
@@ -20,7 +17,6 @@ func JobWorker(
 	messageChannel chan amqp.Delivery,
 	returnChan chan JobWorkerResult,
 	jobService *JobService,
-	job domain.Job,
 	workerID int,
 ) {
 	/*
@@ -42,27 +38,24 @@ func JobWorker(
 			returnChan <- returnJobResult(domain.Job{}, message, err)
 			continue
 		}
-		video.ID = uuid.NewV4().String()
 
-		// goddam do that at construction time!
-		job.Video = video
-		job.OutputBucketPath = os.Getenv("OUTPUT_BUCKET_NAME")
-		job.ID = uuid.NewV4().String()
-		job.Status = "STARTING"
-		job.CreatedAt = time.Now()
-
-		if _, err := jobService.JobRepository.Insert(&job); err != nil {
+		job, err := domain.NewJob(video)
+		if err != nil {
 			returnChan <- returnJobResult(domain.Job{}, message, err)
 			continue
 		}
 
-		jobService.Job = &job
-		if err := jobService.Start(video); err != nil {
+		if _, err := jobService.JobRepository.Insert(job); err != nil {
 			returnChan <- returnJobResult(domain.Job{}, message, err)
 			continue
 		}
 
-		returnChan <- returnJobResult(job, message, nil)
+		if err := jobService.Start(job); err != nil {
+			returnChan <- returnJobResult(domain.Job{}, message, err)
+			continue
+		}
+
+		returnChan <- returnJobResult(*job, message, nil)
 	}
 }
 

@@ -8,11 +8,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewJob(t *testing.T) {
+func TestNewJobWorks(t *testing.T) {
 	video := domain.NewVideo(uuid.NewV4().String(), "resource-id", "path")
 
-	job, err := domain.NewJob("path", "Converted", video)
+	job, err := domain.NewJob(video)
 
 	require.NotNil(t, job)
 	require.Nil(t, err)
+}
+
+func TestNewJobHasPendingStatus(t *testing.T) {
+	video := domain.NewVideo(uuid.NewV4().String(), "resource-id", "path")
+
+	job, err := domain.NewJob(video)
+
+	require.Nil(t, err)
+	require.Equal(t, job.Status, domain.JOB_STATUS_PENDING)
 }

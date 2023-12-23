@@ -62,7 +62,7 @@ func newJob(db *gorm.DB, output string, status string) (*domain.Job, *domain.Vid
 	repo := repositories.VideoRepositoryDb{Db: db}
 	repo.Insert(video)
 
-	job, err := domain.NewJob("output_path", "Pending", video)
+	job, err := domain.NewJob(video)
 
 	return job, video, err
 }

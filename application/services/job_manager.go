@@ -57,7 +57,6 @@ func (j *JobManager) Start(ch *amqp.Channel) {
 			j.MessageChannel,
 			j.JobReturnChannel,
 			j.JobService,
-			j.Domain,
 			qtdProcesses,
 		)
 	}
