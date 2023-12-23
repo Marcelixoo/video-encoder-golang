@@ -30,8 +30,8 @@ const (
 )
 
 func NewJob(video *Video) (*Job, error) {
-	if video.ID == "" {
-		video.ID = uuid.NewV4().String()
+	if err := video.Validate(); err != nil {
+		return nil, err
 	}
 
 	job := Job{
@@ -43,9 +43,7 @@ func NewJob(video *Video) (*Job, error) {
 		Video:  video,
 	}
 
-	err := job.Validate()
-
-	if err != nil {
+	if err := job.Validate(); err != nil {
 		return nil, err
 	}
 

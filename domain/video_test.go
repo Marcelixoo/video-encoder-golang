@@ -23,3 +23,24 @@ func TestVideoValidation(t *testing.T) {
 
 	require.Nil(t, err)
 }
+
+func TestVideoValidationFailureWhenNoResourceIDProvided(t *testing.T) {
+	video := domain.Video{
+		FilePath: "/tmp/123123123",
+	}
+
+	err := video.Validate()
+
+	require.NotNil(t, err)
+}
+
+func TestVideoValidationGeneratesUUIDIfNotProvided(t *testing.T) {
+	video := domain.Video{
+		ResourceID: "123123123",
+		FilePath:   "/tmp/123123123",
+	}
+
+	err := video.Validate()
+
+	require.Nil(t, err)
+}

@@ -17,6 +17,13 @@ func TestNewJobWorks(t *testing.T) {
 	require.Nil(t, err)
 }
 
+func TestNewJobFailsIfVideoIsInvalid(t *testing.T) {
+	job, err := domain.NewJob(&domain.Video{})
+
+	require.Nil(t, job)
+	require.NotNil(t, err)
+}
+
 func TestNewJobHasPendingStatus(t *testing.T) {
 	video := domain.NewVideo(uuid.NewV4().String(), "resource-id", "path")
 

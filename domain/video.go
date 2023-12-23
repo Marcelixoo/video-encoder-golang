@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/asaskevich/govalidator"
+	uuid "github.com/satori/go.uuid"
 )
 
 type Video struct {
@@ -29,11 +30,10 @@ func NewVideo(id string, resourceID string, filepath string) *Video {
 }
 
 func (video *Video) Validate() error {
-	_, err := govalidator.ValidateStruct(video)
-
-	if err != nil {
-		return err
+	if video.ID == "" {
+		video.ID = uuid.NewV4().String()
 	}
 
-	return nil
+	_, err := govalidator.ValidateStruct(video)
+	return err
 }
