@@ -14,6 +14,14 @@ type JobService struct {
 	VideoService  VideoService
 }
 
+func NewJobService(jobRepository repositories.JobRepository, videoService VideoService) *JobService {
+	return &JobService{
+		Job:           &domain.Job{},
+		JobRepository: jobRepository,
+		VideoService:  videoService,
+	}
+}
+
 func (j *JobService) Start(video *domain.Video) error {
 	err := j.changeJobStatus("DOWNLOADING")
 	if err != nil {
@@ -76,7 +84,7 @@ func (j *JobService) Start(video *domain.Video) error {
 func (j *JobService) performUpload(video *domain.Video) error {
 	videoUpload := NewVideoUpload()
 	videoUpload.OutputBucket = os.Getenv("OUTPUT_BUCKET_NAME")
-	videoUpload.VideoPath = os.Getenv("LOCAL_STORAGE_PATH" + "/" + video.ID)
+	videoUpload.VideoPath = os.Getenv("LOCAL_STORAGE_PATH") + "/" + video.ID
 
 	concurrency, _ := strconv.Atoi(os.Getenv("CONCURRENCY_UPLOAD"))
 	doneUpload := make(chan string)

@@ -18,6 +18,12 @@ type JobRepositoryDb struct {
 	Db *gorm.DB
 }
 
+func NewJobRepository(db *gorm.DB) JobRepository {
+	return &JobRepositoryDb{
+		Db: db,
+	}
+}
+
 func (repo JobRepositoryDb) Insert(job *domain.Job) (*domain.Job, error) {
 	if job.ID == "" {
 		job.ID = uuid.NewV4().String()

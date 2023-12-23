@@ -21,7 +21,10 @@ type VideoUpload struct {
 }
 
 func NewVideoUpload() *VideoUpload {
-	return &VideoUpload{}
+	return &VideoUpload{
+		Paths:  []string{},
+		Errors: []string{},
+	}
 }
 
 func (vu *VideoUpload) UploadObject(

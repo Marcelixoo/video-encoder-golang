@@ -19,7 +19,7 @@ type JobWorkerResult struct {
 func JobWorker(
 	messageChannel chan amqp.Delivery,
 	returnChan chan JobWorkerResult,
-	jobService JobService,
+	jobService *JobService,
 	job domain.Job,
 	workerID int,
 ) {
@@ -37,11 +37,12 @@ func JobWorker(
 			video *domain.Video
 		)
 
-		err = json.Unmarshal(message.Body, video)
+		err = json.Unmarshal(message.Body, &video)
 		if err != nil {
 			returnChan <- returnJobResult(domain.Job{}, message, err)
 			continue
 		}
+		video.ID = uuid.NewV4().String()
 
 		// goddam do that at construction time!
 		job.Video = video

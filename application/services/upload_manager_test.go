@@ -6,6 +6,7 @@ import (
 	"encoder/framework/filesystem"
 	"encoder/framework/gcp"
 	"log"
+	"os"
 	"testing"
 
 	"github.com/joho/godotenv"
@@ -13,10 +14,12 @@ import (
 )
 
 func TestVideoUploadManager(t *testing.T) {
+	bucketName := os.Getenv("OUTPUT_BUCKET_NAME")
+
 	video, videoService := encodeVideo(t)
 
 	videoUpload := services.NewVideoUpload()
-	videoUpload.OutputBucket = "video-encoder-golang-test"
+	videoUpload.OutputBucket = bucketName
 	videoUpload.VideoPath = filesystem.AbsPathToLocalStorage(video.ID)
 
 	doneUpload := make(chan string)
@@ -32,9 +35,11 @@ func TestVideoUploadManager(t *testing.T) {
 func encodeVideo(t *testing.T) (*domain.Video, services.VideoService) {
 	t.Helper()
 
+	bucketName := os.Getenv("OUTPUT_BUCKET_NAME")
+
 	var err error
 
-	videoStorage, err := gcp.NewCloudStorageReader("video-encoder-golang-test")
+	videoStorage, err := gcp.NewCloudStorageReader(bucketName)
 	if err != nil {
 		t.Fatal(err)
 	}

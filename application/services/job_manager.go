@@ -18,7 +18,7 @@ type JobManager struct {
 	MessageChannel   chan amqp.Delivery
 	JobReturnChannel chan JobWorkerResult
 	RabbitMQ         *queue.RabbitMQ
-	JobService       JobService
+	JobService       *JobService
 }
 
 type JobNotificationError struct {
@@ -31,7 +31,7 @@ func NewJobManager(
 	rabbitMQ *queue.RabbitMQ,
 	jobReturnChannel chan JobWorkerResult,
 	messageChannel chan amqp.Delivery,
-	jobService JobService,
+	jobService *JobService,
 ) *JobManager {
 	return &JobManager{
 		Db:               db,
@@ -48,7 +48,7 @@ func (j *JobManager) Start(ch *amqp.Channel) {
 
 	concurrency, err := strconv.Atoi(os.Getenv("CONCURRENCY_WORKERS"))
 	if err != nil {
-		log.Default().Println("could not load CONCURRENCY_WORKERS; using default value of 1")
+		log.Println("could not load CONCURRENCY_WORKERS; using default value of 1")
 		concurrency = 1
 	}
 
@@ -64,16 +64,13 @@ func (j *JobManager) Start(ch *amqp.Channel) {
 
 	for jobResult := range j.JobReturnChannel {
 		if jobResult.Error != nil {
-			j.checkParseErrors(jobResult)
+			err = j.checkParseErrors(jobResult)
+		} else {
+			err = j.notifySuccess(jobResult, ch)
 		}
-
-		var requeue = false
 
 		if err != nil {
-			jobResult.Message.Reject(requeue)
-		}
-
-		if err := j.notifySuccess(jobResult, ch); err != nil {
+			requeue := false
 			jobResult.Message.Reject(requeue)
 		}
 	}
@@ -96,9 +93,10 @@ func (j *JobManager) notifySuccess(jobResult JobWorkerResult, ch *amqp.Channel) 
 // this method is unnecessarily complex
 func (j *JobManager) checkParseErrors(jobResult JobWorkerResult) error {
 	if jobResult.Job.ID != "" {
-		log.Printf("")
+		log.Printf("message_id: %d. error with job %v processing video %v. %v",
+			jobResult.Message.DeliveryTag, jobResult.Job.ID, jobResult.Job.Video.ID, jobResult.Error.Error())
 	} else {
-		log.Printf("")
+		log.Printf("message_id: %d. error parsing message %v", jobResult.Message.DeliveryTag, jobResult.Error.Error())
 	}
 
 	errorMsg := JobNotificationError{

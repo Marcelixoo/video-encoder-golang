@@ -8,6 +8,7 @@ import (
 	"encoder/framework/gcp"
 	"fmt"
 	"log"
+	"os"
 	"testing"
 
 	"github.com/jinzhu/gorm"
@@ -19,7 +20,9 @@ import (
 func TestVideoServiceDownload(t *testing.T) {
 	var err error
 
-	videoStorage, err := gcp.NewCloudStorageReader("video-encoder-golang-test")
+	bucketName := os.Getenv("OUTPUT_BUCKET_NAME")
+
+	videoStorage, err := gcp.NewCloudStorageReader(bucketName)
 	if err != nil {
 		t.Fatal(err)
 	}

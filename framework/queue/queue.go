@@ -40,7 +40,7 @@ func NewRabbitMQ() *RabbitMQ {
 }
 
 func (r *RabbitMQ) Connect() *amqp.Channel {
-	dns := fmt.Sprintf("amqp://%s:%s@:%s:%s%s",
+	dns := fmt.Sprintf("amqp://%s:%s@%s:%s%s",
 		r.User, r.Password, r.Host, r.Port, r.Vhost)
 
 	conn, err := amqp.Dial(dns)
